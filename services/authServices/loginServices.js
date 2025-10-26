@@ -1,5 +1,5 @@
 const asyncHandler = require("express-async-handler");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const i18n = require("i18n");
 const { v4: uuidv4 } = require("uuid");
 const ms = require("ms");

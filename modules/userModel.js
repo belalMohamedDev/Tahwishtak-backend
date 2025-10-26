@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const mongooseI18n = require("mongoose-i18n-localize");
 
 const userSchema = new mongoose.Schema(
