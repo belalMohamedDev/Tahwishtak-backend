@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const DailyActivity = require("../../modules/dailyActivitySchema");
+const activitySchema = require("../../modules/activitySchema ");
 
 exports.startNewDay = asyncHandler(async (req, res) => {
   const { startingBalance } = req.body;
@@ -28,7 +29,7 @@ exports.addActivity = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const { type, price } = req.body;
 
-  // التحقق من القيم
+  // تحقق من القيم
   if (!type || !price || price <= 0) {
     return res.status(400).json({
       status: false,
@@ -56,22 +57,20 @@ exports.addActivity = asyncHandler(async (req, res) => {
     });
   }
 
-  // تحديث البيانات
-  currentDay.todayActivite.push({
+  // ✅ إنشاء Activity جديد وربطه باليوم الحالي
+  const newActivity = await activitySchema.create({
+    user: userId,
+    dailyActivity: currentDay._id,
     type,
     price,
-    time: new Date(),
   });
 
-  currentDay.totalSpent += price;
-  currentDay.currentBalance -= price;
+  // ✅ الـ post("save") في activitySchema هيحدث الرصيد تلقائيًا
 
-  await currentDay.save();
-
-  res.status(200).json({
+  res.status(201).json({
     status: true,
     message: "تم إضافة النشاط بنجاح",
-    data: currentDay,
+    data: newActivity,
   });
 });
 
@@ -80,22 +79,24 @@ exports.getTodayActivities = asyncHandler(async (req, res) => {
   const today = new Date().toISOString().split("T")[0];
 
   const currentDay = await DailyActivity.findOne({ user: userId, date: today });
-
   if (!currentDay) {
     return res.status(404).json({
       status: false,
-      message: "لا يوجد أنشطة لليوم الحالي",
+      message: "اليوم غير موجود.",
     });
   }
+
+  const activities = await activitySchema.find({
+    dailyActivity: currentDay._id,
+  });
 
   res.status(200).json({
     status: true,
     message: "تم جلب أنشطة اليوم بنجاح",
     data: {
-      date: currentDay.date,
       currentBalance: currentDay.currentBalance,
       totalSpent: currentDay.totalSpent,
-      activities: currentDay.todayActivite,
+      activities,
     },
   });
 });
