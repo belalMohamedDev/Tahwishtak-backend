@@ -1,38 +1,40 @@
 const mongoose = require("mongoose");
 
-const activitySchema = new mongoose.Schema(
+const dailyActivitySchema = new mongoose.Schema(
   {
-    type: {
-      type: String,
-      enum: [
-        "حيوانات",
-        "معاملات نقدية",
-        "مواصلات",
-        "سفر",
-        "التسوق",
-        "شراء مأكولات",
-      ],
+    user: {
+      type: mongoose.Schema.ObjectId,
+      ref: "User",
       required: true,
     },
-
-    price: {
+    date: {
+      type: String, // YYYY-MM-DD
+      default: () => new Date().toISOString().split("T")[0],
+    },
+    startingBalance: {
       type: Number,
       required: true,
     },
-
-    time: {
-      type: Date,
-      default: Date.now,
+    currentBalance: {
+      type: Number,
+      default: 0,
     },
-
-    dailyActivity: {
-      type: mongoose.Schema.ObjectId,
-      ref: "DailyActivity",
-      required: true,
+    totalSpent: {
+      type: Number,
+      default: 0,
     },
   },
   { timestamps: true },
 );
 
-const Activity = mongoose.model("Activity", activitySchema);
-module.exports = Activity;
+// حساب القيم تلقائيًا عند حفظ اليوم
+dailyActivitySchema.methods.updateBalances = async function () {
+  const Activity = mongoose.model("Activity");
+  const activities = await Activity.find({ dailyActivity: this._id });
+  const totalSpent = activities.reduce((sum, a) => sum + a.price, 0);
+  this.totalSpent = totalSpent;
+  this.currentBalance = this.startingBalance - totalSpent;
+  await this.save();
+};
+
+module.exports = mongoose.model("DailyActivity", dailyActivitySchema);
