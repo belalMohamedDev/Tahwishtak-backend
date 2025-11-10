@@ -42,7 +42,6 @@ const activitySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// بعد إنشاء Activity جديد يتم تحديث DailyActivity تلقائيًا
 activitySchema.post("save", async function () {
   const DailyActivity = mongoose.model("DailyActivity");
   const daily = await DailyActivity.findById(this.dailyActivity);

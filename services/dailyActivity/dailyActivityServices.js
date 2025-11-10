@@ -29,7 +29,6 @@ exports.addActivity = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const { type, price } = req.body;
 
-  // تحقق من القيم
   if (!type || !price || price <= 0) {
     return res.status(400).json({
       status: false,
@@ -39,7 +38,6 @@ exports.addActivity = asyncHandler(async (req, res) => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  // جلب اليوم الحالي للمستخدم
   const currentDay = await DailyActivity.findOne({ user: userId, date: today });
 
   if (!currentDay) {
@@ -49,7 +47,6 @@ exports.addActivity = asyncHandler(async (req, res) => {
     });
   }
 
-  // التحقق من الرصيد
   if (currentDay.currentBalance < price) {
     return res.status(400).json({
       status: false,
@@ -57,15 +54,12 @@ exports.addActivity = asyncHandler(async (req, res) => {
     });
   }
 
-  // ✅ إنشاء Activity جديد وربطه باليوم الحالي
   const newActivity = await activitySchema.create({
     user: userId,
     dailyActivity: currentDay._id,
     type,
     price,
   });
-
-  // ✅ الـ post("save") في activitySchema هيحدث الرصيد تلقائيًا
 
   res.status(201).json({
     status: true,
@@ -96,6 +90,8 @@ exports.getTodayActivities = asyncHandler(async (req, res) => {
     data: {
       currentBalance: currentDay.currentBalance,
       totalSpent: currentDay.totalSpent,
+      startingBalance: currentDay.startingBalance,
+      date: currentDay.date,
       activities,
     },
   });
