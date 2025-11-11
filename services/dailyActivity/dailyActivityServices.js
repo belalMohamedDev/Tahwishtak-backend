@@ -101,17 +101,34 @@ exports.addActivity = asyncHandler(async (req, res) => {
     });
   }
 
-  const newActivity = await activitySchema.create({
+  await activitySchema.create({
     user: userId,
     dailyActivity: currentDay._id,
     type,
     price,
   });
 
+  currentDay.currentBalance -= price;
+  currentDay.totalSpent += price;
+  await currentDay.save();
+
+  const activitiesToday = await activitySchema
+    .find({
+      user: userId,
+      dailyActivity: currentDay._id,
+    })
+    .sort({ createdAt: -1 });
+
   res.status(201).json({
     status: true,
     message: "تم إضافة النشاط بنجاح",
-    data: newActivity,
+    data: {
+      currentBalance: currentDay.currentBalance,
+      totalSpent: currentDay.totalSpent,
+      startingBalance: currentDay.startingBalance,
+      date: currentDay.date,
+      activitiesToday,
+    },
   });
 });
 
