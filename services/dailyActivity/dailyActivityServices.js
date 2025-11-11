@@ -13,7 +13,10 @@ exports.startNewDay = asyncHandler(async (req, res) => {
   });
 
   if (existingDay) {
+    existingDay.startingBalance += amountToAdd;
+
     existingDay.currentBalance += amountToAdd;
+
     await existingDay.save();
 
     return res.status(200).json({
@@ -34,7 +37,7 @@ exports.startNewDay = asyncHandler(async (req, res) => {
   const newDay = await DailyActivity.create({
     user: userId,
     date: today,
-    startingBalance: lastDay ? lastDay.currentBalance : amountToAdd,
+    startingBalance: initialBalance,
     currentBalance: initialBalance,
   });
 
