@@ -112,7 +112,7 @@ exports.addActivity = asyncHandler(async (req, res) => {
   currentDay.totalSpent += price;
   await currentDay.save();
 
-  const activitiesToday = await activitySchema
+  const activities = await activitySchema
     .find({
       user: userId,
       dailyActivity: currentDay._id,
@@ -127,7 +127,7 @@ exports.addActivity = asyncHandler(async (req, res) => {
       totalSpent: currentDay.totalSpent,
       startingBalance: currentDay.startingBalance,
       date: currentDay.date,
-      activitiesToday,
+      activities,
     },
   });
 });
