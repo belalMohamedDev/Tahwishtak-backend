@@ -19,10 +19,22 @@ exports.startNewDay = asyncHandler(async (req, res) => {
 
     await existingDay.save();
 
+    const activities = await activitySchema.find({
+      dailyActivity: existingDay._id,
+    });
+
     return res.status(200).json({
       status: true,
       message: "تمت إضافة المبلغ إلى رصيد اليوم الحالي بنجاح",
-      data: existingDay,
+      data: {
+        _id: existingDay._id,
+        user: existingDay.user,
+        date: existingDay.date,
+        startingBalance: existingDay.startingBalance,
+        currentBalance: existingDay.currentBalance,
+        totalSpent: existingDay.totalSpent,
+        activities,
+      },
     });
   }
 
@@ -41,10 +53,22 @@ exports.startNewDay = asyncHandler(async (req, res) => {
     currentBalance: initialBalance,
   });
 
+  const activities = await activitySchema.find({
+    dailyActivity: newDay._id,
+  });
+
   res.status(201).json({
     status: true,
     message: "تم بدء يوم جديد بنجاح",
-    data: newDay,
+    data: {
+      _id: newDay._id,
+      user: newDay.user,
+      date: newDay.date,
+      startingBalance: newDay.startingBalance,
+      currentBalance: newDay.currentBalance,
+      totalSpent: newDay.totalSpent,
+      activities,
+    },
   });
 });
 
@@ -95,11 +119,38 @@ exports.getTodayActivities = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const today = new Date().toISOString().split("T")[0];
 
-  const currentDay = await DailyActivity.findOne({ user: userId, date: today });
+  let currentDay = await DailyActivity.findOne({ user: userId, date: today });
+
   if (!currentDay) {
-    return res.status(404).json({
-      status: false,
-      message: "اليوم غير موجود.",
+    const lastDay = await DailyActivity.findOne({ user: userId }).sort({
+      date: -1,
+    });
+
+    if (!lastDay) {
+      return res.status(404).json({
+        status: false,
+        message: "لا يوجد أي سجلات سابقة للمستخدم.",
+      });
+    }
+
+    currentDay = await DailyActivity.create({
+      user: userId,
+      date: today,
+      startingBalance: lastDay.currentBalance,
+      currentBalance: lastDay.currentBalance,
+      totalSpent: 0,
+    });
+
+    return res.status(200).json({
+      status: true,
+      message: "لا يوجد يوم نشط اليوم، تم جلب آخر يوم مسجل.",
+      data: {
+        currentBalance: currentDay.currentBalance,
+        totalSpent: currentDay.totalSpent,
+        startingBalance: currentDay.startingBalance,
+        date: currentDay.date,
+        activities: [],
+      },
     });
   }
 
