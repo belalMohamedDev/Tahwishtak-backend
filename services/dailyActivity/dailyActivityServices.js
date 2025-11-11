@@ -3,7 +3,7 @@ const DailyActivity = require("../../modules/dailyActivitySchema");
 const activitySchema = require("../../modules/activitySchema ");
 
 exports.startNewDay = asyncHandler(async (req, res) => {
-  const { startingBalance } = req.body;
+  const { amountToAdd } = req.body;
   const userId = req.userModel._id;
   const today = new Date().toISOString().split("T")[0];
 
@@ -11,15 +11,35 @@ exports.startNewDay = asyncHandler(async (req, res) => {
     user: userId,
     date: today,
   });
-  if (existingDay) return res.status(400).json({ message: "اليوم بدأ بالفعل" });
+
+  if (existingDay) {
+    existingDay.currentBalance += amountToAdd;
+    await existingDay.save();
+
+    return res.status(200).json({
+      status: true,
+      message: "تمت إضافة المبلغ إلى رصيد اليوم الحالي بنجاح",
+      data: existingDay,
+    });
+  }
+
+  const lastDay = await DailyActivity.findOne({ user: userId }).sort({
+    date: -1,
+  });
+
+  const initialBalance = lastDay
+    ? lastDay.currentBalance + amountToAdd
+    : amountToAdd;
 
   const newDay = await DailyActivity.create({
     user: userId,
-    startingBalance,
-    currentBalance: startingBalance,
+    date: today,
+    startingBalance: lastDay ? lastDay.currentBalance : amountToAdd,
+    currentBalance: initialBalance,
   });
 
   res.status(201).json({
+    status: true,
     message: "تم بدء يوم جديد بنجاح",
     data: newDay,
   });
