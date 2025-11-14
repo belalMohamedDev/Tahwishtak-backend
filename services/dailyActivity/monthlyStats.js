@@ -5,9 +5,14 @@ exports.getMonthlyStats = asyncHandler(async (req, res) => {
   const { year, month } = req.query;
   const userId = req.userModel._id;
 
-  const startDate = new Date(year, month - 1, 1);
+  const now = new Date();
 
-  const endDate = new Date(year, month, 0, 23, 59, 59);
+  const queryYear = year ? parseInt(year, 10) : now.getFullYear();
+  const queryMonth = month ? parseInt(month, 10) : now.getMonth() + 1;
+
+  const startDate = new Date(queryYear, queryMonth - 1, 1);
+
+  const endDate = new Date(queryYear, queryMonth, 0, 23, 59, 59);
 
   const stats = await activitySchema.aggregate([
     {
