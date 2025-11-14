@@ -6,11 +6,15 @@ const {
   startNewDay,
 } = require("../services/dailyActivity/dailyActivityServices");
 
+const { getMonthlyStats } = require("../services/dailyActivity/monthlyStats");
+
 const router = express.Router();
 
 router.use(authServices.protect);
 
 router.route("/").post(addActivity).get(getTodayActivities);
 router.route("/newDays").post(startNewDay);
+
+router.route("/monthlyStats").get(getMonthlyStats);
 
 module.exports = router;

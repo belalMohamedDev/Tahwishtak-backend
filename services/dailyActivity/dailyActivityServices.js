@@ -1,6 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const DailyActivity = require("../../modules/dailyActivitySchema");
-const activitySchema = require("../../modules/activitySchema ");
+const activitySchema = require("../../modules/activitySchema");
 
 exports.startNewDay = asyncHandler(async (req, res) => {
   const { amountToAdd } = req.body;
