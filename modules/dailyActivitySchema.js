@@ -27,7 +27,6 @@ const dailyActivitySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// حساب القيم تلقائيًا عند حفظ اليوم
 dailyActivitySchema.methods.updateBalances = async function () {
   const Activity = mongoose.model("Activity");
   const activities = await Activity.find({ dailyActivity: this._id });
