@@ -146,10 +146,16 @@ exports.deleteActivity = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const { activityId } = req.params;
 
-  const activity = await activitySchema.findOne({
-    _id: activityId,
-    user: userId,
-  });
+  if (!activityId) {
+    return res.status(400).json({
+      status: false,
+      message: "يجب إرسال معرف النشاط",
+    });
+  }
+
+  const activity = await activitySchema
+    .findOne({ _id: activityId, user: userId })
+    .populate("dailyActivity");
 
   if (!activity) {
     return res.status(404).json({
@@ -158,7 +164,7 @@ exports.deleteActivity = asyncHandler(async (req, res) => {
     });
   }
 
-  const dailyActivity = await DailyActivity.findById(activity.dailyActivity);
+  const { dailyActivity } = activity;
 
   if (!dailyActivity) {
     return res.status(404).json({
@@ -171,7 +177,15 @@ exports.deleteActivity = asyncHandler(async (req, res) => {
   dailyActivity.totalSpent -= activity.price;
 
   await dailyActivity.save();
+
   await activity.deleteOne();
+
+  const activities = await activitySchema
+    .find({
+      user: userId,
+      dailyActivity: dailyActivity._id,
+    })
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     status: true,
@@ -181,6 +195,7 @@ exports.deleteActivity = asyncHandler(async (req, res) => {
       totalSpent: dailyActivity.totalSpent,
       startingBalance: dailyActivity.startingBalance,
       date: dailyActivity.date,
+      activities,
     },
   });
 });
