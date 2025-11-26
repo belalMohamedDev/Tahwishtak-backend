@@ -2,6 +2,9 @@ const asyncHandler = require("express-async-handler");
 const DailyActivity = require("../../modules/dailyActivitySchema");
 const activitySchema = require("../../modules/activitySchema");
 
+//  @desc    Start a new day or add amount to existing day
+//  @route   POST /api/v1/dailyActivity/newDays
+//  @access  Protected (user)
 exports.startNewDay = asyncHandler(async (req, res) => {
   const { amountToAdd } = req.body;
   const userId = req.userModel._id;
@@ -72,6 +75,10 @@ exports.startNewDay = asyncHandler(async (req, res) => {
   });
 });
 
+//  @desc   Add a new activity to today's activities
+//  @route   POST /api/v1/dailyActivity/addActivity
+//  @access  Protected (user)
+
 exports.addActivity = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const { type, price } = req.body;
@@ -132,6 +139,124 @@ exports.addActivity = asyncHandler(async (req, res) => {
   });
 });
 
+//  @desc   Delete an activity from today's activities
+//  @route   DELETE /api/v1/dailyActivity/:activityId
+//  @access  Protected (user)
+exports.deleteActivity = asyncHandler(async (req, res) => {
+  const userId = req.userModel._id;
+  const { activityId } = req.params;
+
+  const activity = await activitySchema.findOne({
+    _id: activityId,
+    user: userId,
+  });
+
+  if (!activity) {
+    return res.status(404).json({
+      status: false,
+      message: "النشاط غير موجود",
+    });
+  }
+
+  const dailyActivity = await DailyActivity.findById(activity.dailyActivity);
+
+  if (!dailyActivity) {
+    return res.status(404).json({
+      status: false,
+      message: "اليوم غير موجود",
+    });
+  }
+
+  dailyActivity.currentBalance += activity.price;
+  dailyActivity.totalSpent -= activity.price;
+
+  await dailyActivity.save();
+  await activity.deleteOne();
+
+  res.status(200).json({
+    status: true,
+    message: "تم حذف النشاط بنجاح",
+    data: {
+      currentBalance: dailyActivity.currentBalance,
+      totalSpent: dailyActivity.totalSpent,
+      startingBalance: dailyActivity.startingBalance,
+      date: dailyActivity.date,
+    },
+  });
+});
+
+//  @desc   Update an activity from today's activities
+//  @route   PUT /api/v1/dailyActivity/:activityId
+//  @access  Protected (user)
+
+exports.updateActivity = asyncHandler(async (req, res) => {
+  const userId = req.userModel._id;
+  const { activityId } = req.params;
+  const { type, price } = req.body;
+
+  if (!type || !price || price <= 0) {
+    return res.status(400).json({
+      status: false,
+      message: "الرجاء إدخال نوع النشاط وسعر صالح",
+    });
+  }
+
+  const activity = await activitySchema.findOne({
+    _id: activityId,
+    user: userId,
+  });
+
+  if (!activity) {
+    return res.status(404).json({
+      status: false,
+      message: "النشاط غير موجود",
+    });
+  }
+
+  const dailyActivity = await DailyActivity.findById(activity.dailyActivity);
+
+  if (!dailyActivity) {
+    return res.status(404).json({
+      status: false,
+      message: "اليوم غير موجود",
+    });
+  }
+
+  const oldPrice = activity.price;
+  const difference = price - oldPrice;
+
+  if (difference > 0 && dailyActivity.currentBalance < difference) {
+    return res.status(400).json({
+      status: false,
+      message: "الرصيد غير كافي لتعديل سعر هذا النشاط",
+    });
+  }
+
+  dailyActivity.currentBalance -= difference;
+  dailyActivity.totalSpent += difference;
+
+  await dailyActivity.save();
+
+  activity.type = type;
+  activity.price = price;
+  await activity.save();
+
+  res.status(200).json({
+    status: true,
+    message: "تم تعديل النشاط بنجاح",
+    data: {
+      currentBalance: dailyActivity.currentBalance,
+      totalSpent: dailyActivity.totalSpent,
+      startingBalance: dailyActivity.startingBalance,
+      date: dailyActivity.date,
+      activity,
+    },
+  });
+});
+
+//  @desc   Get today's activities
+//  @route   GET /api/v1/dailyActivity
+//  @access  Protected (user)
 exports.getTodayActivities = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const today = new Date().toISOString().split("T")[0];

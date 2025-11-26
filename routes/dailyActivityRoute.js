@@ -4,6 +4,8 @@ const {
   addActivity,
   getTodayActivities,
   startNewDay,
+  deleteActivity,
+  updateActivity,
 } = require("../services/dailyActivity/dailyActivityServices");
 
 const { getMonthlyStats } = require("../services/dailyActivity/monthlyStats");
@@ -16,5 +18,7 @@ router.route("/").post(addActivity).get(getTodayActivities);
 router.route("/newDays").post(startNewDay);
 
 router.route("/monthlyStats").get(getMonthlyStats);
+
+router.route("/:id").delete(deleteActivity).put(updateActivity);
 
 module.exports = router;
