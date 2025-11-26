@@ -203,7 +203,6 @@ exports.deleteActivity = asyncHandler(async (req, res) => {
 //  @desc   Update an activity from today's activities
 //  @route   PUT /api/v1/dailyActivity/:activityId
 //  @access  Protected (user)
-
 exports.updateActivity = asyncHandler(async (req, res) => {
   const userId = req.userModel._id;
   const { activityId } = req.params;
@@ -240,6 +239,7 @@ exports.updateActivity = asyncHandler(async (req, res) => {
   const oldPrice = activity.price;
   const difference = price - oldPrice;
 
+  // Check if user has enough balance
   if (difference > 0 && dailyActivity.currentBalance < difference) {
     return res.status(400).json({
       status: false,
@@ -247,14 +247,25 @@ exports.updateActivity = asyncHandler(async (req, res) => {
     });
   }
 
+  // Update balances
   dailyActivity.currentBalance -= difference;
-  dailyActivity.totalSpent += difference;
+
+  dailyActivity.totalSpent = dailyActivity.totalSpent - oldPrice + price;
 
   await dailyActivity.save();
 
+  // Update activity
   activity.type = type;
   activity.price = price;
   await activity.save();
+
+  // Fetch updated activities list
+  const activities = await activitySchema
+    .find({
+      user: userId,
+      dailyActivity: dailyActivity._id,
+    })
+    .sort({ createdAt: -1 });
 
   res.status(200).json({
     status: true,
@@ -264,7 +275,7 @@ exports.updateActivity = asyncHandler(async (req, res) => {
       totalSpent: dailyActivity.totalSpent,
       startingBalance: dailyActivity.startingBalance,
       date: dailyActivity.date,
-      activity,
+      activities,
     },
   });
 });
