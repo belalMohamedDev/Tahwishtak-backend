@@ -19,6 +19,6 @@ router.route("/newDays").post(startNewDay);
 
 router.route("/monthlyStats").get(getMonthlyStats);
 
-router.route("/:id").delete(deleteActivity).put(updateActivity);
+router.route("/:activityId").delete(deleteActivity).put(updateActivity);
 
 module.exports = router;
