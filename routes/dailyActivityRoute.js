@@ -1,12 +1,15 @@
 const express = require("express");
 const authServices = require("../services/authServices/protect");
+const { addActivity } = require("../services/dailyActivity/addActivity");
+
+const { deleteActivity } = require("../services/dailyActivity/deleteActivity");
+
 const {
-  addActivity,
   getTodayActivities,
-  startNewDay,
-  deleteActivity,
-  updateActivity,
-} = require("../services/dailyActivity/dailyActivityServices");
+} = require("../services/dailyActivity/getTodayActivities");
+const { startNewDay } = require("../services/dailyActivity/startNewDay");
+
+const { updateActivity } = require("../services/dailyActivity/updateActivity");
 
 const { getMonthlyStats } = require("../services/dailyActivity/monthlyStats");
 
