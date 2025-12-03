@@ -29,7 +29,14 @@ exports.logOut = asyncHandler(async (req, res, next) => {
 
   const { userId, sessionId } = decoded;
 
-  await redisClient.del(`refreshToken:${userId}:${sessionId}`);
+  const tokenKey = `refreshToken:${userId}:${sessionId}`;
+  const isExist = await redisClient.get(tokenKey);
+
+  if (!isExist) {
+    return next(new ApiError(i18n.__("invalidRefreshToken"), 400));
+  }
+
+  await redisClient.del(tokenKey);
 
   res.status(200).json({
     status: true,
