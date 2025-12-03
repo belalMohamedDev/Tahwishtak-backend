@@ -2,7 +2,6 @@ const asyncHandler = require("express-async-handler");
 const jwt = require("jsonwebtoken");
 const i18n = require("i18n");
 const redisClient = require("../../config/redisConnection");
-const userModel = require("../../modules/userModel");
 
 const ApiError = require("../../utils/apiError/apiError");
 const createToken = require("../../utils/generate token/createToken");
@@ -31,7 +30,7 @@ exports.newAccessToken = asyncHandler(async (req, res, next) => {
       process.env.JWT_REFRESH_TOKEN_SECRET_KEY,
     );
   } catch (err) {
-    console.error("JWT Verify Error:", err.message);
+
     return next(new ApiError(i18n.__("invalidOrExpiredRefreshToken"), 401));
   }
 
@@ -45,10 +44,6 @@ exports.newAccessToken = asyncHandler(async (req, res, next) => {
     return next(new ApiError(i18n.__("invalidOrExpiredRefreshToken"), 401));
   }
 
-  const user = await userModel.findById(userId);
-  if (!user) {
-    return next(new ApiError(i18n.__("invalidRefreshToken"), 400));
-  }
   const accessToken = createToken(
     { userId },
     process.env.JWT_ACCESS_TOKEN_SECRET_KEY,

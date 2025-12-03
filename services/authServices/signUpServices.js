@@ -18,7 +18,6 @@ exports.signUp = asyncHandler(async (req, res, next) => {
   // create user
   const document = await userModel.create({
     name: req.body.name,
-
     email: req.body.email,
     password: req.body.password,
   });
